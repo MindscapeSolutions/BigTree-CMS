@@ -1490,6 +1490,35 @@
 		}
 
 		/*
+			Function: createRole
+				Creates a role.
+
+			Parameters:
+				data - An array of role data. ("role")
+
+			Returns:
+				id of the newly created role or false if a role already exists with the provided name.
+		*/
+
+		function createRole($data) {
+			global $bigtree;
+
+			$role = sqlescape(htmlspecialchars($data["role"]));
+
+			// See if the role already exists
+			$r = sqlrows(sqlquery("SELECT * FROM bigtree_roles WHERE role = '$role'"));
+			if ($r > 0) {
+				return false;
+			}
+
+			sqlquery("INSERT INTO bigtree_roles (`role`) VALUES ('$role')");
+			$id = sqlid();
+			$this->track("bigtree_roles",$id,"created");
+
+			return $id;
+        }
+
+		/*
 			Function: createSetting
 				Creates a setting.
 
@@ -2186,6 +2215,35 @@
 			Parameters:
 				id - The id of the setting.
 		*/
+
+		/*
+			Function: deleteRole
+				Deletes a role.
+
+			Parameters:
+				id - The role id to delete.
+
+			Returns:
+				true if successful.
+		*/
+
+		function deleteRole($id) {
+			$id = sqlescape($id);
+
+            // check if any users are assigned to this role
+            $results = sqlquery("SELECT * FROM bigtree_users_in_roles WHERE role = '$id'");
+            $totalRows = sqlrows($results);
+
+            if ($totalRows > 0) {
+                return false;
+            }
+
+			sqlquery("DELETE FROM bigtree_roles WHERE id = '$id'");
+			$this->track("bigtree_roles",$id,"deleted");
+
+			return true;
+		}
+
 
 		function deleteSetting($id) {
 			$id = BigTreeCMS::extensionSettingCheck($id);
@@ -4140,6 +4198,43 @@
 		}
 
 		/*
+			Function: getPageOfRoles
+				Returns a page of roles.
+
+			Parameters:
+				page - The page of roles to return.
+				query - Optional query string to search against.
+				sort - Order to sort the results by. Defaults to role ASC.
+
+			Returns:
+				An array of entries from bigtree_roles.
+		*/
+
+		static function getPageOfRoles($page = 1,$query = "",$sort = "role ASC") {
+			// If we're searching.
+			if ($query) {
+				$qparts = explode(" ",$query);
+				$qp = array();
+				foreach ($qparts as $part) {
+					$part = sqlescape(strtolower($part));
+					$qp[] = "(LOWER(role) LIKE '%$role%')";
+				}
+				$q = sqlquery("SELECT * FROM bigtree_roles WHERE ".implode(" AND ",$qp)." ORDER BY $sort LIMIT ".(($page - 1) * static::$PerPage).",".static::$PerPage);
+			// If we're grabbing any role.
+			} else {
+				$q = sqlquery("SELECT * FROM bigtree_roles ORDER BY $sort LIMIT ".(($page - 1) * static::$PerPage).",".static::$PerPage);
+			}
+
+			$items = array();
+			while ($f = sqlfetch($q)) {
+				$items[] = $f;
+			}
+
+			return $items;
+		}
+
+
+		/*
 			Function: getPageOfSettings
 				Returns a page of settings the logged in user has access to.
 
@@ -4915,6 +5010,26 @@
 		}
 
 		/*
+			Function: getRole
+				Gets a role's decoded information.
+
+			Parameters:
+				id - The id of the role to return.
+
+			Returns:
+				A role entry from bigtree_roles.
+		*/
+
+		static function getRole($id) {
+			$id = sqlescape($id);
+			$item = sqlfetch(sqlquery("SELECT * FROM bigtree_roles WHERE id = '$id'"));
+			if (!$item) {
+				return false;
+			}
+			return $item;
+		}
+
+		/*
 			Function: getRoutedTemplates
 				Returns a list of routed templates ordered by position that the logged in user has access to.
 
@@ -4924,6 +5039,41 @@
 			Returns:
 				An array of template entries.
 		*/
+
+		/*
+			Function: getRolesPageCount
+				Returns the number of pages of roles.
+
+			Parameters:
+				query - Optional query string to search against.
+
+			Returns:
+				The number of pages of results.
+		*/
+
+		static function getRolesPageCount($query = "") {
+			// If we're searching.
+			if ($query) {
+				$qparts = explode(" ",$query);
+				$qp = array();
+				foreach ($qparts as $part) {
+					$part = sqlescape(strtolower($part));
+					$qp[] = "(LOWER(role) LIKE '%$role%')";
+				}
+				$q = sqlquery("SELECT id FROM bigtree_roles WHERE ".implode(" AND ",$qp));
+			// If we're showing all.
+			} else {
+				$q = sqlquery("SELECT id FROM bigtree_roles");
+			}
+
+			$r = sqlrows($q);
+			$pages = ceil($r / static::$PerPage);
+			if ($pages == 0) {
+				$pages = 1;
+			}
+
+			return $pages;
+		}
 
 		function getRoutedTemplates($sort = "position DESC, id ASC") {
 			$q = sqlquery("SELECT * FROM bigtree_templates WHERE level <= '".$this->Level."' ORDER BY $sort");
@@ -7858,6 +8008,31 @@
 			Returns:
 				true if successful, false if a setting exists for the new id already.
 		*/
+
+		/*
+			Function: updateRole
+				Updates a role.
+
+			Parameters:
+				id - The role's "id"
+				data - A key/value array containing role.
+
+			Returns:
+				True if successful.
+		*/
+
+		function updateRole($id,$data) {
+			global $bigtree;
+			$id = sqlescape($id);
+
+			$role = sqlescape(htmlspecialchars($data["role"]));
+
+            sqlquery("UPDATE bigtree_roles SET `role` = '$role' WHERE id = '$id'");
+
+			$this->track("bigtree_roles",$id,"updated");
+
+			return true;
+		}
 
 		function updateSetting($old_id,$data) {
 			global $bigtree;

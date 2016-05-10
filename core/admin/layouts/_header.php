@@ -8,7 +8,9 @@
 		)),
 		array("link" => "pages", "title" => "Pages", "access" => 0),
 		array("link" => "modules", "title" => "Modules", "access" => 0),
-		array("link" => "users", "title" => "Users", "access" => 1),
+		array("link" => "users", "title" => "Users", "access" => 1, "children" => array(
+            array("link" => "../roles", "title" => "Roles", "access" => 1)
+            )),
 		array("link" => "settings", "title" => "Settings", "access" => 1),
 		array("link" => "developer", "title" => "Developer", "access" => 2, "children" => array(
 			array("link" => "", "title" => "Create", "access" => 2, "group" => true, "children" => array(

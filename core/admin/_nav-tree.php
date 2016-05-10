@@ -40,6 +40,10 @@
 			array("title" => "Edit User","link" => "users/edit","icon" => "gravatar","hidden" => true),
 			array("title" => "Profile","link" => "users/profile","icon" => "gravatar","hidden" => true)
 		)),
+        "roles" => array("title" => "Roles","link" => "roles","icon" => "users","level" => 1,"children" => array(
+            array("title" => "View Roles","link" => "roles","icon" => "users","level" =>1),
+            array("title" => "Add Role","link" => "roles/add","nav_icon" => "add")
+        )),
 		"settings" => array("title" => "Settings","link" => "settings","icon" => "settings","children" => array(
 			array("title" => "Edit Setting","link" => "settings/edit","hidden" => true)
 		)),
