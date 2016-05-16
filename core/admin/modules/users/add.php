@@ -33,12 +33,22 @@
 				
 				<fieldset>
 					<label class="required">User Level</label>
-					<select name="level" tabindex="5">
+					<select name="level" tabindex="5" id="user_level">
 						<option value="0">Normal User</option>
 						<option value="1"<? if ($level == 1) { ?> selected="selected"<? } ?>>Administrator</option>
 						<? if ($admin->Level > 1) { ?><option value="2"<? if ($level == 2) { ?> selected="selected"<? } ?>>Developer</option><? } ?>
 					</select>
 				</fieldset>
+
+                <fieldset id="roleSection">
+                    <label>Role</label>
+                    <select name="role" tabindex="7" id="role">
+                        <option value="">None</option>
+                        <? foreach (BigTreeAdmin::getRoles() as $roleId => $roleData) { ?>
+                        <option value="<?= $roleId ?>"><?= $roleData["role"] ?></option>
+                        <? } ?>
+                    </select>
+                </fieldset>
 			</div>
 			<div class="right">
 				<fieldset>
@@ -67,9 +77,19 @@
 	BigTreeFormValidator("form.module");
 	BigTreePasswordInput("input[type=password]");
 	
+	$("#user_level").on("change",function(event,data) {
+		if (data.value  > 0) {
+            $("#roleSection").hide();
+        }
+        else {
+            $("#roleSection").show();
+        }
+    });
+
 	$(document).ready(function() {
 		$("input.email").blur(function() {
 			$(this).parent("fieldset").find(".gravatar").show().find("img").attr("src", 'http://www.gravatar.com/avatar/' + md5($(this).val().trim()) + '?s=36&d=' + encodeURIComponent("<?=ADMIN_ROOT?>images/icon_default_gravatar.jpg") + '&rating=pg');
 		});
 	});
+
 </script>

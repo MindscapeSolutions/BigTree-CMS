@@ -24,6 +24,12 @@
 		$perms = json_decode($_POST["permissions"],true);
 		$_POST["permissions"] = array("page" => $perms["Page"],"module" => $perms["Module"],"resources" => $perms["Resource"],"module_gbp" => $perms["ModuleGBP"]);
 		$_POST["alerts"] = json_decode($_POST["alerts"],true);
+
+        // if the user is is not a Normal user, reset their role back to 0
+        if (intval($_POST["user_level"]) != 0) {
+            $_POST["role"] = 0;
+        }
+
 		$success = $admin->updateUser($id,$_POST);
 		
 		if (!$success) {

@@ -180,6 +180,16 @@
 					</select>
 				</fieldset>
 				<? } ?>
+
+                <fieldset id="roleSection" <? if (intval($user["level"]) != 0) { ?> style="display: none;" <? } ?>>
+                    <label>Role</label>
+                    <select name="role" tabindex="7" id="role">
+                        <option value="" <? if (empty($user["role"])) { ?> selected="selected" <? } ?>>None</option>
+                        <? foreach (BigTreeAdmin::getRoles() as $roleId => $roleData) { ?>
+                        <option value="<?= $roleId ?>" <? if ($roleId == $user["role"]) { ?> selected="selected" <? } ?>><?= $roleData["role"] ?></option>
+                        <? } ?>
+                    </select>
+                </fieldset>
 			</div>
 			<div class="right">
 				<fieldset>
@@ -532,12 +542,14 @@
 			$(".user_permissions .permission_label").addClass("permission_label_admin");
 			$("#regular_user_message").hide();
 			$("#admin_user_message").show();
+            $("#roleSection").hide();
 		} else {
 			$(".user_permissions header").show();
 			$(".user_permissions .permission_level").show();
 			$(".user_permissions .permission_label").removeClass("permission_label_admin");
 			$("#regular_user_message").show();
 			$("#admin_user_message").hide();
+            $("#roleSection").show();
 		}
 	});
 	

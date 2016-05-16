@@ -1700,6 +1700,7 @@
 			global $bigtree;
 
 			$level = intval($data["level"]);
+            $role = intval($data["role"]);
 			$email = sqlescape($data["email"]);
 			$name = sqlescape(htmlspecialchars($data["name"]));
 			$company = sqlescape(htmlspecialchars($data["company"]));
@@ -1726,6 +1727,10 @@
 			sqlquery("INSERT INTO bigtree_users (`email`,`password`,`name`,`company`,`level`,`permissions`,`alerts`,`daily_digest`) VALUES ('$email','$password','$name','$company','$level','$permissions','$alerts','$daily_digest')");
 			$id = sqlid();
 			$this->track("bigtree_users",$id,"created");
+
+            if ($role > 0) {
+                sqlquery("INSERT INTO bigtree_users_in_roles (`user`, `role`) VALUES ('$id', '$role')");
+            }
 
 			return $id;
 		}
@@ -5030,15 +5035,26 @@
 		}
 
 		/*
-			Function: getRoutedTemplates
-				Returns a list of routed templates ordered by position that the logged in user has access to.
+			Function: getRoles
+				Returns a list of all roles.
 
 			Parameters:
-				sort - Sort order, defaults to positioned
+				sort - Order to sort the list. Defaults to role ASC.
 
 			Returns:
-				An array of template entries.
+				An array of entries from bigtree_roles.
+				The keys of the array are the ids of the role.
 		*/
+
+		static function getRoles($sort = "role ASC") {
+			$items = array();
+			$q = sqlquery("SELECT * FROM bigtree_roles ORDER BY $sort");
+			while ($f = sqlfetch($q)) {
+				$items[$f["id"]] = $f;
+			}
+
+			return $items;
+		}
 
 		/*
 			Function: getRolesPageCount
@@ -5074,6 +5090,17 @@
 
 			return $pages;
 		}
+
+		/*
+			Function: getRoutedTemplates
+				Returns a list of routed templates ordered by position that the logged in user has access to.
+
+			Parameters:
+				sort - Sort order, defaults to positioned
+
+			Returns:
+				An array of template entries.
+		*/
 
 		function getRoutedTemplates($sort = "position DESC, id ASC") {
 			$q = sqlquery("SELECT * FROM bigtree_templates WHERE level <= '".$this->Level."' ORDER BY $sort");
@@ -5304,6 +5331,17 @@
 				$item["permissions"] = json_decode($item["permissions"],true);
 			}
 			$item["alerts"] = json_decode($item["alerts"],true);
+
+            // check if a role has been assigned to this user
+            $roleResult = sqlquery("SELECT * FROM bigtree_users_in_roles where user = '$id'");
+
+            $item["role"] = 0;
+            while ($f = sqlfetch($roleResult)) {
+                if (!empty($f["role"])) {
+                    $item["role"] = $f["role"];
+                }
+            }
+
 			return $item;
 		}
 
@@ -8174,6 +8212,7 @@
 			}
 
 			$level = intval($data["level"]);
+            $role = intval($data["role"]);
 			$email = sqlescape($data["email"]);
 			$name = sqlescape(htmlspecialchars($data["name"]));
 			$company = sqlescape(htmlspecialchars($data["company"]));
@@ -8199,6 +8238,34 @@
 			} else {
 				sqlquery("UPDATE bigtree_users SET `email` = '$email', `name` = '$name', `company` = '$company', `level` = '$level', `permissions` = '$permissions', `alerts` = '$alerts', `daily_digest` = '$daily_digest' WHERE id = '$id'");
 			}
+
+            // update the role
+            if ($level > 0) {
+                sqlquery("DELETE FROM bigtree_users_in_roles where user = $id");
+            }
+            else {
+                $roleResult = sqlquery("SELECT * FROM bigtree_users_in_roles where user = $id");
+
+                $roleFound = false;
+                while ($f = sqlfetch($roleResult)) {
+                    $roleFound = true;
+                    break;
+                }
+
+                if ($roleFound) {
+                    if (empty($role)) {
+                        sqlquery("DELETE FROM bigtree_users_in_roles where user = $id");
+                    }
+                    else {
+                        sqlquery("UPDATE bigtree_users_in_roles set role = $role where user = $id");
+                    }
+                }
+                else {
+                    if (!empty($role)) {
+                        sqlquery("INSERT INTO bigtree_users_in_roles (`user`, `role`) VALUES ($id, $role)");
+                    }
+                }
+            }
 
 			$this->track("bigtree_users",$id,"updated");
 
