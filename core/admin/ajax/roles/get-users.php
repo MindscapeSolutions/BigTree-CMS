@@ -5,7 +5,7 @@
 	$page = isset($_GET["page"]) ? intval($_GET["page"]) : 1;
 
 	// Prevent SQL shenanigans
-	$sort_by = "role";
+	$sort_by = "name";
 	if (isset($_GET["sort"])) {
 		$valid_columns = array("role");
 		if (in_array($_GET["sort"],$valid_columns)) {
@@ -14,26 +14,20 @@
 	}
 	$sort_dir = (isset($_GET["sort_direction"]) && $_GET["sort_direction"] == "DESC") ? "DESC" : "ASC";
 
-	$pages = $admin->getRolesPageCount($query);
-	$results = $admin->getPageOfRoles($page,$query,"`$sort_by` $sort_dir");
-	
+	$pages = $admin->getUsersPageCountForRole($query, $item["id"]);
+	$results = $admin->getPageOfUsersForRole($page,"`$sort_by` $sort_dir", $bigtree["commands"][0]);
+
 	foreach ($results as $item) {
 ?>
 <li id="row_<?=$item["id"]?>">
-	<section class="view_column users_name"><?=$item["role"]?></section>
+	<section class="view_column users_name"><?=$item["name"]?></section>
     <section class="view_column users_name"></section>
 	<section class="view_action">
 		<? if ($admin->Level >= $item["level"]) { ?>
-		<a href="<?=ADMIN_ROOT?>roles/edit/<?=$item["id"]?>/" class="icon_edit"></a>
+		<a href="<?=ADMIN_ROOT?>users/edit/<?=$item["id"]?>/" class="icon_edit"></a>
 		<? } else { ?>
-		<span class="icon_edit disabled_icon has_tooltip" data-tooltip="<p><strong>Edit Role</strong></p><p>You may not edit this role.</p>"></span>
+		<span class="icon_edit disabled_icon has_tooltip" data-tooltip="<p><strong>Edit Role</strong></p><p>You may not edit this user.</p>"></span>
 		<? } ?>
-	</section>
-    <section>
-		<a href="<?=ADMIN_ROOT?>roles/view-users/<?=$item["id"]?>" class="icon_preview"></a>
-    </section>
-	<section class="view_action">
-		<a href="#<?=$item["id"]?>" class="icon_delete"></a>
 	</section>
 </li>
 <?

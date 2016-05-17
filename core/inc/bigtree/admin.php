@@ -4334,6 +4334,39 @@
 		}
 
 		/*
+			Function: getPageOfUsersForRole
+				Returns a page of users for a given role.
+
+			Parameters:
+				page - The page of users to return.
+				sort - Order to sort the results by. Defaults to name ASC.
+                roleId - The id of the record in bigtree_roles
+
+			Returns:
+				An array of entries from bigtree_users.
+		*/
+
+		static function getPageOfUsersForRole($page = 1,$sort = "name ASC", $roleId) {
+            $roleId = intval($roleId);
+
+            $q = sqlquery("SELECT *
+                            FROM bigtree_users_in_roles as ur,
+                                    bigtree_users as u
+                            WHERE ur.role = '$roleId' and
+                                ur.user = u.id
+                            ORDER BY $sort 
+                            LIMIT ".(($page - 1) * static::$PerPage).",".static::$PerPage
+                         );
+
+			$items = array();
+			while ($f = sqlfetch($q)) {
+				$items[] = $f;
+			}
+
+			return $items;
+		}
+
+		/*
 			Function: getPageRevision
 				Returns a version of a page from the bigtree_page_revisions table.
 
@@ -5423,6 +5456,44 @@
 			// If we're showing all.
 			} else {
 				$q = sqlquery("SELECT id FROM bigtree_users");
+			}
+
+			$r = sqlrows($q);
+			$pages = ceil($r / static::$PerPage);
+			if ($pages == 0) {
+				$pages = 1;
+			}
+
+			return $pages;
+		}
+
+		/*
+			Function: getUsersPageCountForRole
+				Returns the number of pages of users for a role.
+
+			Parameters:
+				query - Optional query string to search against.
+                roleId - The id of the role record
+
+			Returns:
+				The number of pages of results.
+		*/
+
+		static function getUsersPageCountForRole($query = "", $roleId) {
+            $roleId = intval($roleId);
+
+			// If we're searching.
+			if ($query) {
+				$qparts = explode(" ",$query);
+				$qp = array();
+				foreach ($qparts as $part) {
+					$part = sqlescape(strtolower($part));
+					$qp[] = "(LOWER(name) LIKE '%$part%' OR LOWER(email) LIKE '%$part%' OR LOWER(company) LIKE '%$part%')";
+				}
+				$q = sqlquery("SELECT id FROM bigtree_users WHERE role = '$roleId' AND " . implode(" AND ",$qp));
+			// If we're showing all.
+			} else {
+				$q = sqlquery("SELECT id FROM bigtree_users_roles WHERE role = '$roleId'");
 			}
 
 			$r = sqlrows($q);
