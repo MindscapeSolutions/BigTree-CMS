@@ -1628,9 +1628,17 @@
 				$fields[] = $key."=".str_replace("&","%26",$val);
 			}
 			
+			// Set the cURL options
+			$cOpts = array(
+				CURLOPT_HEADER => 0,
+				CURLOPT_POST => TRUE,
+				CURLOPT_POSTFIELDS => http_build_query($params)
+			);
+			
 			// Send it off to the server, try 3 times.
 			while ($count < 3) {
-				$response = BigTree::cURL($this->PostURL,implode("&",$fields));
+				$response = BigTree::cURL($this->PostURL, false, $cOpts);
+
 				if ($response) {
 					$r = explode("|",$response);
 					return array(
